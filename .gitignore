@@ -1,0 +1,6 @@
+.host
+.idea
+.vagrant
+*~
+tmp
+www
