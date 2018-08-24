@@ -35,6 +35,7 @@ Vagrant.configure('2') do |config|
   ip_address = nil
   if File.file? "#{vagrant_root}/.host"
     hostconfig = YAML.load_file("#{vagrant_root}/.host")
+    hostname = hostconfig[:hostname]
     ip_address = IPAddr.new hostconfig[:ip_address]
   else
     ip_address = generate_unused_ip_address(IPAddr.new '10.15.0.0')
@@ -61,9 +62,20 @@ Vagrant.configure('2') do |config|
 
   config.vm.post_up_message = "Hostname : #{hostname}\nIP Address : #{ip_address}"
 
-  config.trigger.after :destroy, stdout: true do
-    FileUtils.rm_rf "#{vagrant_root}/www" if File.exist? "#{vagrant_root}/www"
-    FileUtils.rm_rf "#{vagrant_root}/tmp" if File.exist? "#{vagrant_root}/tmp"
-    File.delete "#{vagrant_root}/.host" if File.file? "#{vagrant_root}/.host"
+  config.trigger.after :destroy do |trigger|
+    trigger.warn = "Removing #{vagrant_root}/www"
+    trigger.run = { inline: "bash -c \"if [[ -d #{vagrant_root}/www ]]; then rm -fr #{vagrant_root}/www; fi\"" }
   end
+  
+  config.trigger.after :destroy do |trigger|
+    trigger.warn = "Removing #{vagrant_root}/tmp"
+    trigger.run = { inline: "bash -c \"if [[ -d #{vagrant_root}/tmp ]]; then rm -fr #{vagrant_root}/tmp; fi\"" }
+  end
+
+  config.trigger.after :destroy do |trigger|
+    trigger.warn = "Removing #{vagrant_root}/.host"
+    trigger.run = { inline: "bash -c \"if [[ -f #{vagrant_root}/.host ]]; then rm -fr #{vagrant_root}/.host; fi\"" }
+  end
+
+
 end
